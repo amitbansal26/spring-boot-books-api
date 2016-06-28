@@ -78,6 +78,15 @@ public class BooksApplicationTests {
     }
 
     @Test
+    public void testCreateBookWitInvalidInput() throws Exception {
+        this.mockMvc.perform(post("/books")
+                .contentType(contentType)
+                .content(json(new Book())))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors[0].error", is("Title is a required field")));
+    }
+
+    @Test
     public void testGetBookById() throws Exception {
         Book book = bookRepository.save(new Book("test book"));
 
@@ -104,6 +113,17 @@ public class BooksApplicationTests {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id", is(book.getId().intValue())))
                 .andExpect(jsonPath("$.title", is("updated title")));
+    }
+
+    @Test
+    public void testUpdateBookWitInvalidInput() throws Exception {
+        Book book = bookRepository.save(new Book("test book"));
+
+        this.mockMvc.perform(put("/books/" + book.getId())
+                .contentType(contentType)
+                .content(json(new Book())))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors[0].error", is("Title is a required field")));
     }
 
     @Test

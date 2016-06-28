@@ -1,6 +1,7 @@
 package com.example.models;
 
 import javax.persistence.*;
+import javax.validation.constraints.NotNull;
 
 @Entity
 public class Book {
@@ -8,6 +9,8 @@ public class Book {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
+    @Column
+    @NotNull(message = "error.title.notnull")
     private String title;
 
     public Book(String title) {
