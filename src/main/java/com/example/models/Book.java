@@ -20,13 +20,17 @@ public class Book {
     @Size(min = 1, message = "error.authors.not_empty")
     private Set<String> authors = new HashSet<>();
 
+    @Column
+    private String description;
+
     public Book(String title) {
-        this(title, new HashSet<String>());
+        this(title, new HashSet<String>(), "");
     }
 
-    public Book(String title, Set<String> authors) {
+    public Book(String title, Set<String> authors, String description) {
         this.title = title;
         this.authors = authors;
+        this.description = description;
     }
 
     public Book() {}
@@ -46,6 +50,15 @@ public class Book {
 
     public Book setAuthors(Set<String> value) {
         authors = value;
+        return this;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public Book setDescription(String value) {
+        description = value;
         return this;
     }
 

@@ -62,8 +62,8 @@ public class BooksApplicationTests {
         return allBooks().get(0);
     }
 
-    private Book newBookWithAuthor(String title, String author) {
-        return new Book(title, new HashSet<String>(Arrays.asList(author)));
+    private Book newBookWithAuthor(String title, String author, String description) {
+        return new Book(title, new HashSet<String>(Arrays.asList(author)), description);
     }
 
     @Before
@@ -74,7 +74,7 @@ public class BooksApplicationTests {
 
     @Test
     public void testCreateBook() throws Exception {
-        Book input = newBookWithAuthor("test book", "author1");
+        Book input = newBookWithAuthor("test book", "author1", "test book description");
 
         this.mockMvc.perform(post("/books")
                 .contentType(contentType)
@@ -83,6 +83,7 @@ public class BooksApplicationTests {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id", is(firstBook().getId().intValue())))
                 .andExpect(jsonPath("$.title", is("test book")))
+                .andExpect(jsonPath("$.description", is("test book description")))
                 .andExpect(jsonPath("$.authors[0]", is("author1")));
     }
 
@@ -92,19 +93,21 @@ public class BooksApplicationTests {
                 .contentType(contentType)
                 .content(json(new Book())))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.errors[0].error", is("Title is a required field")))
-                .andExpect(jsonPath("$.errors[1].error", is("Authors can't be empty")));
+                .andExpect(jsonPath("$.errors[0].error", is("Authors can't be empty")))
+                .andExpect(jsonPath("$.errors[1].error", is("Title is a required field")));
     }
 
     @Test
     public void testGetBookById() throws Exception {
-        Book book = bookRepository.save(newBookWithAuthor("test book", "author1"));
+        Book book = bookRepository.save(newBookWithAuthor("test book", "author1", "test book description"));
 
         this.mockMvc.perform(get("/books/" + book.getId()))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(contentType))
                 .andExpect(jsonPath("$.id", is(book.getId().intValue())))
-                .andExpect(jsonPath("$.title", is(book.getTitle())));
+                .andExpect(jsonPath("$.title", is("test book")))
+                .andExpect(jsonPath("$.authors[0]", is("author1")))
+                .andExpect(jsonPath("$.description", is("test book description")));
     }
 
     @Test
@@ -114,41 +117,42 @@ public class BooksApplicationTests {
 
     @Test
     public void testUpdateBook() throws Exception {
-        Book book = bookRepository.save(newBookWithAuthor("test book", "author1"));
+        Book book = bookRepository.save(newBookWithAuthor("test book", "author1", "test book description"));
 
         this.mockMvc.perform(put("/books/" + book.getId())
                 .contentType(contentType)
-                .content(json(newBookWithAuthor("updated title", "author2"))))
+                .content(json(newBookWithAuthor("updated title", "author2", "test book new description"))))
                 .andExpect(content().contentType(contentType))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id", is(book.getId().intValue())))
                 .andExpect(jsonPath("$.title", is("updated title")))
+                .andExpect(jsonPath("$.description", is("test book new description")))
                 .andExpect(jsonPath("$.authors[0]", is("author2")));
     }
 
     @Test
     public void testUpdateBookWitInvalidInput() throws Exception {
-        Book book = bookRepository.save(newBookWithAuthor("test book", "author1"));
+        Book book = bookRepository.save(newBookWithAuthor("test book", "author1", "test book description"));
 
         this.mockMvc.perform(put("/books/" + book.getId())
                 .contentType(contentType)
                 .content(json(new Book())))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.errors[0].error", is("Title is a required field")))
-                .andExpect(jsonPath("$.errors[1].error", is("Authors can't be empty")));
+                .andExpect(jsonPath("$.errors[0].error", is("Authors can't be empty")))
+                .andExpect(jsonPath("$.errors[1].error", is("Title is a required field")));
     }
 
     @Test
     public void testUpdateBookReturns404WhenBookDoesNotExist() throws Exception {
         this.mockMvc.perform(put("/books/123")
                 .contentType(contentType)
-                .content(json(newBookWithAuthor("title", "author"))))
+                .content(json(newBookWithAuthor("title", "author", "test book description"))))
                 .andExpect(status().isNotFound());
     }
 
     @Test
     public void testDeleteBook() throws Exception {
-        Book book = bookRepository.save(newBookWithAuthor("test book", "author1"));
+        Book book = bookRepository.save(newBookWithAuthor("test book", "author1", "test book description"));
 
         this.mockMvc.perform(delete("/books/" + book.getId()))
                 .andExpect(status().isOk());
@@ -164,18 +168,20 @@ public class BooksApplicationTests {
 
     @Test
     public void testGetAllBooks() throws Exception {
-        Book book1 = bookRepository.save(newBookWithAuthor("test book1", "author1"));
-        Book book2 = bookRepository.save(newBookWithAuthor("test book2", "author2"));
+        Book book1 = bookRepository.save(newBookWithAuthor("test book1", "author1", "test book1 description"));
+        Book book2 = bookRepository.save(newBookWithAuthor("test book2", "author2", "test book2 description"));
 
         this.mockMvc.perform(get("/books/"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(contentType))
                 .andExpect(jsonPath("$[0].id", is(book1.getId().intValue())))
-                .andExpect(jsonPath("$[0].title", is(book1.getTitle())))
+                .andExpect(jsonPath("$[0].title", is("test book1")))
                 .andExpect(jsonPath("$[0].authors[0]", is("author1")))
+                .andExpect(jsonPath("$[0].description", is("test book1 description")))
                 .andExpect(jsonPath("$[1].id", is(book2.getId().intValue())))
-                .andExpect(jsonPath("$[1].title", is(book2.getTitle())))
-                .andExpect(jsonPath("$[1].authors[0]", is("author2")));
+                .andExpect(jsonPath("$[1].title", is("test book2")))
+                .andExpect(jsonPath("$[1].authors[0]", is("author2")))
+                .andExpect(jsonPath("$[1].description", is("test book2 description")));
     }
 
     @Test

@@ -9,6 +9,7 @@ import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.FieldError;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
@@ -46,10 +47,12 @@ public class BooksController {
     public ResponseEntity<?> processValidationError(MethodArgumentNotValidException ex) {
         Locale currentLocale = LocaleContextHolder.getLocale();
 
-        List<ValidationError> errors = ex.getBindingResult().getFieldErrors().stream().map((error) -> {
-            String msg = msgSource.getMessage(error.getDefaultMessage(), null, currentLocale);
-            return new ValidationError(msg);
-        }).collect(Collectors.toList());
+        List<ValidationError> errors = ex.getBindingResult().getFieldErrors().stream()
+                .sorted((e1, e2) -> e1.getField().compareTo(e2.getField()))
+                .map((error) -> {
+                    String msg = msgSource.getMessage(error.getDefaultMessage(), null, currentLocale);
+                    return new ValidationError(msg);
+                }).collect(Collectors.toList());
 
         return new ResponseEntity<>(new ValidationErrors(errors), HttpStatus.BAD_REQUEST);
     }
@@ -73,7 +76,9 @@ public class BooksController {
     @RequestMapping(value = "/{id}", method = RequestMethod.PUT)
     public ResponseEntity<?> updateBook(@Validated @RequestBody Book input, @PathVariable("id") Long id) {
         Book book = findBookByIdOrThrow(id);
-        book.setTitle(input.getTitle()).setAuthors(input.getAuthors());
+        book.setTitle(input.getTitle())
+                .setAuthors(input.getAuthors())
+                .setDescription(input.getDescription());
         return new ResponseEntity<>(bookRepository.save(book), HttpStatus.OK);
     }
 
