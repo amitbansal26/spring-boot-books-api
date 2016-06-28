@@ -73,7 +73,7 @@ public class BooksController {
     @RequestMapping(value = "/{id}", method = RequestMethod.PUT)
     public ResponseEntity<?> updateBook(@Validated @RequestBody Book input, @PathVariable("id") Long id) {
         Book book = findBookByIdOrThrow(id);
-        book.setTitle(input.getTitle());
+        book.setTitle(input.getTitle()).setAuthors(input.getAuthors());
         return new ResponseEntity<>(bookRepository.save(book), HttpStatus.OK);
     }
 
