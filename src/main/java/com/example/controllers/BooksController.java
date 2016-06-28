@@ -9,11 +9,26 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Collection;
 
+class BookNotFoundException extends RuntimeException {
+    public BookNotFoundException(Long bookId) {
+        super("could not find book '" + bookId);
+    }
+}
+
 @RestController
 @RequestMapping("/books")
 public class BooksController {
     @Autowired
     private BookRepository bookRepository;
+
+    private Book findBookByIdOrThrow(Long id) {
+        return bookRepository.findById(id).orElseThrow(() -> new BookNotFoundException(id));
+    }
+
+    @ExceptionHandler(BookNotFoundException.class)
+    public ResponseEntity<?> processNotFoundError(BookNotFoundException ex) {
+        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    }
 
     @RequestMapping(method = RequestMethod.GET)
     public ResponseEntity<Collection<Book>> getAllBooks() {
@@ -22,10 +37,7 @@ public class BooksController {
 
     @RequestMapping(value = "/{id}", method = RequestMethod.GET)
     public ResponseEntity<Book> getBookById(@PathVariable("id") Long id) {
-        Book book = bookRepository.findOne(id);
-        if (book == null) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        }
+        Book book = findBookByIdOrThrow(id);
         return new ResponseEntity<>(book, HttpStatus.OK);
     }
 
@@ -36,21 +48,14 @@ public class BooksController {
 
     @RequestMapping(value = "/{id}", method = RequestMethod.PUT)
     public ResponseEntity<?> updateBook(@RequestBody Book input, @PathVariable("id") Long id) {
-        Book book = bookRepository.findOne(id);
-        if (book == null) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        }
+        Book book = findBookByIdOrThrow(id);
         book.setTitle(input.getTitle());
         return new ResponseEntity<>(bookRepository.save(book), HttpStatus.OK);
     }
 
     @RequestMapping(value = "/{id}", method = RequestMethod.DELETE)
     public ResponseEntity<?> deleteBook(@PathVariable("id") Long id) {
-        if (!bookRepository.exists(id)) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        }
-        bookRepository.delete(id);
+        bookRepository.delete(findBookByIdOrThrow(id));
         return new ResponseEntity<>(HttpStatus.OK);
     }
-
 }
